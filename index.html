@@ -1,787 +1,997 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>법인전환 시뮬레이터 🏢</title>
+<title>법인전환 시뮬레이터 — 개인 vs 법인 세금 비교</title>
+<meta name="description" content="개인사업자 vs 법인사업자 세금 비교 시뮬레이터. 2026년 세율 기준. 종합소득세, 법인세, 배당소득세 비교 분석.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: { sans: ['"Pretendard Variable"', 'Pretendard', '-apple-system', 'sans-serif'] },
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+        accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
+        destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
+        card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+      },
+      borderRadius: { lg: 'var(--radius)', md: 'calc(var(--radius) - 2px)', sm: 'calc(var(--radius) - 4px)' },
+    }
+  }
+}
+</script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
-    --primary: #7c3aed;
-    --primary-dark: #6d28d9;
-    --secondary: #2563eb;
-    --bg: #f8fafc;
-    --surface: #ffffff;
-    --text: #1e293b;
-    --text-dim: #64748b;
-    --border: #e2e8f0;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --individual: #f97316;
-    --corp: #7c3aed;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 98%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 263 70% 50%;
+    --radius: 0.75rem;
   }
-  body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-
-  /* Header */
-  .header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 24px 20px; text-align: center; }
-  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  .header p { font-size: 14px; opacity: 0.9; }
-
-  /* Container */
-  .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-
-  /* Tabs */
-  .tabs { display: flex; background: var(--surface); border-radius: 12px; padding: 4px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .tab { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600; border-radius: 8px; cursor: pointer; color: var(--text-dim); transition: all 0.2s; border: none; background: none; }
-  .tab.active { background: var(--primary); color: white; }
-
-  /* Cards */
-  .card { background: var(--surface); border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .card-title .icon { font-size: 20px; }
-
-  /* Form */
-  .form-group { margin-bottom: 16px; }
-  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-dim); margin-bottom: 6px; }
-  .form-group input, .form-group select {
-    width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
-    font-size: 15px; transition: border 0.2s; background: var(--bg);
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --primary: 263 70% 58%;
+    --primary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 263 70% 58%;
   }
-  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .form-hint { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
-
-  /* Button */
-  .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-primary:hover { background: var(--primary-dark); }
-  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
-
-  /* Comparison */
-  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .compare-box { border-radius: 16px; padding: 24px; text-align: center; }
-  .compare-box.individual { background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 2px solid var(--individual); }
-  .compare-box.corp { background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 2px solid var(--corp); }
-  .compare-box .type { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-  .compare-box.individual .type { color: var(--individual); }
-  .compare-box.corp .type { color: var(--corp); }
-  .compare-box .amount { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
-  .compare-box .sub { font-size: 13px; color: var(--text-dim); }
-
-  /* Savings highlight */
-  .savings-box { background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 20px; }
-  .savings-box.negative { background: linear-gradient(135deg, #fee2e2, #fecaca); }
-  .savings-box .label { font-size: 14px; color: #065f46; margin-bottom: 4px; }
-  .savings-box.negative .label { color: #991b1b; }
-  .savings-box .amount { font-size: 32px; font-weight: 700; color: #047857; }
-  .savings-box.negative .amount { color: #dc2626; }
-  .savings-box .desc { font-size: 13px; color: #059669; margin-top: 4px; }
-  .savings-box.negative .desc { color: #ef4444; }
-
-  /* Detail table */
-  .detail-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-  .detail-table th, .detail-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-  .detail-table th { font-weight: 600; color: var(--text-dim); font-size: 12px; background: var(--bg); }
-  .detail-table .amount { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .detail-table tr:last-child td { border-bottom: none; }
-  .detail-table .highlight { background: #fef9c3; }
-
-  /* Chart */
-  .chart-container { margin: 20px 0; }
-  .bar-chart { display: flex; align-items: flex-end; justify-content: center; gap: 40px; height: 200px; padding: 20px 0; }
-  .bar-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .bar { width: 80px; border-radius: 8px 8px 0 0; transition: height 0.5s; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; color: white; font-weight: 600; font-size: 12px; }
-  .bar.individual { background: linear-gradient(180deg, var(--individual), #ea580c); }
-  .bar.corp { background: linear-gradient(180deg, var(--corp), #5b21b6); }
-  .bar-label { font-size: 13px; font-weight: 600; color: var(--text-dim); }
-
-  /* Checklist */
-  .checklist { list-style: none; }
-  .checklist li { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
-  .checklist li:last-child { border-bottom: none; }
-  .checklist .check { width: 24px; height: 24px; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; transition: all 0.2s; }
-  .checklist .check.checked { background: var(--success); border-color: var(--success); color: white; }
-  .checklist .content { flex: 1; }
-  .checklist .title { font-weight: 600; font-size: 14px; }
-  .checklist .desc { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
-
-  /* Notice */
-  .notice { background: #fef9c3; border-left: 4px solid var(--warning); padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 16px; font-size: 13px; color: #854d0e; }
-
-  /* Accordion */
-  .accordion { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
-  .accordion-header { padding: 16px; background: var(--bg); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
-  .accordion-header:hover { background: #f1f5f9; }
-  .accordion-body { padding: 16px; display: none; border-top: 1px solid var(--border); }
-  .accordion.open .accordion-body { display: block; }
-  .accordion-icon { transition: transform 0.2s; }
-  .accordion.open .accordion-icon { transform: rotate(180deg); }
-
-  /* Responsive */
-  @media (max-width: 600px) {
-    .form-row, .form-row-3, .comparison { grid-template-columns: 1fr; }
-    .bar-chart { gap: 20px; }
-    .bar { width: 60px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Pretendard Variable', Pretendard, sans-serif; background: hsl(var(--background)); color: hsl(var(--foreground)); }
+  input[type="text"], input[type="number"], select {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
   }
-
+  input:focus, select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
+    border-color: hsl(var(--ring));
+  }
+  .chart-container { position: relative; }
   @media print {
     .no-print { display: none !important; }
-    .card { box-shadow: none; border: 1px solid #ddd; }
+    body { background: white !important; color: black !important; }
+    .dark { --background: 0 0% 100%; --foreground: 0 0% 0%; --card: 0 0% 100%; --card-foreground: 0 0% 0%; --border: 0 0% 85%; --muted: 0 0% 95%; --muted-foreground: 0 0% 30%; }
   }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 3px; }
+  /* Range slider */
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: hsl(var(--border)); outline: none; border: none; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: hsl(var(--primary)); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  input[type="range"]:focus { box-shadow: none; }
+  /* Transitions */
+  .tab-btn { transition: all 0.15s ease; }
+  .card-hover { transition: box-shadow 0.2s ease; }
+  .card-hover:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 </style>
 </head>
-<body>
+<body class="min-h-screen">
 
-<div class="header">
-  <h1>🏢 법인전환 시뮬레이터</h1>
-  <p>개인사업자 vs 법인, 어느 쪽이 유리할까요?</p>
-</div>
+<!-- Header -->
+<header class="bg-gradient-to-br from-violet-600 to-violet-800 dark:from-violet-800 dark:to-violet-950 text-white">
+  <div class="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2 text-sm font-medium bg-white/15 backdrop-blur rounded-full px-3 py-1">
+        <span>📊</span> 2026년 세율 기준
+      </div>
+      <button onclick="toggleDark()" class="no-print p-2 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur transition" title="다크모드 전환">
+        <span id="darkIcon">🌙</span>
+      </button>
+    </div>
+    <div class="flex items-center gap-3">
+      <img src="logo.png" alt="엘비즈 파트너스" class="w-11 h-11 rounded-lg bg-white/10 p-1 object-contain">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">법인전환 시뮬레이터</h1>
+        <p class="text-violet-200 mt-1 text-sm sm:text-base">개인사업자 vs 법인, 세금부터 5년 누적 절세액까지 한눈에 비교하세요</p>
+      </div>
+    </div>
+  </div>
+</header>
 
-<div class="container">
-  <!-- Notice -->
-  <div class="notice no-print">
-    ⚠️ <strong>주의:</strong> 본 시뮬레이터는 참고용이며, 정확한 세금 계산은 세무사와 상담하시기 바랍니다. 세율은 2026년 기준이며, 지방소득세가 포함되어 있습니다. 출처: <a href="https://www.nts.go.kr" target="_blank">국세청</a>
+<!-- Main -->
+<main class="max-w-5xl mx-auto px-4 -mt-4 pb-12">
+  <!-- Alert -->
+  <div class="bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6 text-sm text-amber-800 dark:text-amber-200 no-print">
+    <strong>⚠️ 참고용 시뮬레이션입니다.</strong> 정확한 세금 계산은 세무사와 상담하세요. 세율은 2026년 확정 기준이며, 지방소득세(10%)가 포함됩니다.
   </div>
 
   <!-- Tabs -->
-  <div class="tabs no-print">
-    <button class="tab active" onclick="switchTab('simulator')">세금 비교</button>
-    <button class="tab" onclick="switchTab('checklist')">전환 체크리스트</button>
-    <button class="tab" onclick="switchTab('info')">법인전환 안내</button>
+  <div class="flex bg-card border border-border rounded-xl p-1 mb-6 no-print overflow-x-auto">
+    <button class="tab-btn flex-1 min-w-0 px-3 py-2.5 rounded-lg text-sm font-semibold text-center whitespace-nowrap active" data-tab="simulator" onclick="switchTab('simulator',this)">💰 세금 비교</button>
+    <button class="tab-btn flex-1 min-w-0 px-3 py-2.5 rounded-lg text-sm font-semibold text-center whitespace-nowrap" data-tab="fiveyear" onclick="switchTab('fiveyear',this)">📈 5년 누적</button>
+    <button class="tab-btn flex-1 min-w-0 px-3 py-2.5 rounded-lg text-sm font-semibold text-center whitespace-nowrap" data-tab="dividend" onclick="switchTab('dividend',this)">💸 배당 전략</button>
+    <button class="tab-btn flex-1 min-w-0 px-3 py-2.5 rounded-lg text-sm font-semibold text-center whitespace-nowrap" data-tab="methods" onclick="switchTab('methods',this)">🔄 전환 방식</button>
+    <button class="tab-btn flex-1 min-w-0 px-3 py-2.5 rounded-lg text-sm font-semibold text-center whitespace-nowrap" data-tab="checklist" onclick="switchTab('checklist',this)">✅ 체크리스트</button>
+    <button class="tab-btn flex-1 min-w-0 px-3 py-2.5 rounded-lg text-sm font-semibold text-center whitespace-nowrap" data-tab="info" onclick="switchTab('info',this)">📚 세율 안내</button>
   </div>
 
-  <!-- Simulator Tab -->
+  <!-- ==================== TAB: SIMULATOR ==================== -->
   <div id="tab-simulator">
-    <div class="card">
-      <div class="card-title"><span class="icon">📊</span> 사업 현황 입력</div>
+    <div class="bg-card border border-border rounded-xl p-5 sm:p-6 mb-4 card-hover">
+      <h2 class="text-base font-bold mb-5 flex items-center gap-2">📊 사업 현황 입력</h2>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>연간 매출액 (원)</label>
-          <input type="text" id="revenue" placeholder="500,000,000" oninput="formatNumber(this)">
-          <div class="form-hint">부가세 제외 금액</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">연간 매출액 (원)</label>
+          <input type="text" id="revenue" placeholder="500,000,000" oninput="fmt(this)" class="w-full px-3 py-2.5 rounded-lg text-sm">
+          <p class="text-xs text-muted-foreground mt-1">부가세 제외 금액</p>
         </div>
-        <div class="form-group">
-          <label>연간 순이익 (원)</label>
-          <input type="text" id="profit" placeholder="100,000,000" oninput="formatNumber(this)">
-          <div class="form-hint">매출 - 비용 (인건비, 임차료 등)</div>
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">연간 순이익 (원)</label>
+          <input type="text" id="profit" placeholder="100,000,000" oninput="fmt(this)" class="w-full px-3 py-2.5 rounded-lg text-sm">
+          <p class="text-xs text-muted-foreground mt-1">매출 − 비용(인건비, 임차료 등)</p>
         </div>
       </div>
 
-      <div class="form-row-3">
-        <div class="form-group">
-          <label>대표자 희망 급여 (월)</label>
-          <input type="text" id="ceoSalary" placeholder="5,000,000" oninput="formatNumber(this)">
-          <div class="form-hint">법인 전환 시 대표 급여</div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">대표자 희망 급여 (월)</label>
+          <input type="text" id="ceoSalary" placeholder="5,000,000" oninput="fmt(this)" class="w-full px-3 py-2.5 rounded-lg text-sm">
         </div>
-        <div class="form-group">
-          <label>직원 수</label>
-          <input type="number" id="employees" placeholder="3" value="0">
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">직원 수</label>
+          <input type="number" id="employees" placeholder="0" value="0" class="w-full px-3 py-2.5 rounded-lg text-sm">
         </div>
-        <div class="form-group">
-          <label>업종</label>
-          <select id="industry">
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">업종</label>
+          <select id="industry" class="w-full px-3 py-2.5 rounded-lg text-sm">
             <option value="service">서비스업</option>
             <option value="retail">도소매업</option>
             <option value="manufacturing">제조업</option>
             <option value="construction">건설업</option>
             <option value="it">IT/소프트웨어</option>
+            <option value="realestate">부동산임대업</option>
           </select>
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>현재 사업 형태</label>
-          <select id="currentType">
-            <option value="general">일반과세자</option>
-            <option value="simple">간이과세자</option>
-          </select>
+      <!-- 소득공제 옵션 -->
+      <details class="mb-4 border border-border rounded-lg">
+        <summary class="px-4 py-3 text-sm font-semibold cursor-pointer hover:bg-accent rounded-lg">🧾 소득공제 옵션 (선택)</summary>
+        <div class="px-4 pb-4 pt-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-muted-foreground mb-1.5">기본공제 대상 인원</label>
+            <input type="number" id="dependents" value="1" min="1" class="w-full px-3 py-2.5 rounded-lg text-sm">
+            <p class="text-xs text-muted-foreground mt-1">본인 포함, 1인당 150만원</p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-muted-foreground mb-1.5">국민연금 납부액 (연)</label>
+            <input type="text" id="pension" placeholder="0" oninput="fmt(this)" class="w-full px-3 py-2.5 rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-muted-foreground mb-1.5">기타 소득공제 (연)</label>
+            <input type="text" id="otherDeduction" placeholder="0" oninput="fmt(this)" class="w-full px-3 py-2.5 rounded-lg text-sm">
+            <p class="text-xs text-muted-foreground mt-1">건강보험, 개인연금 등</p>
+          </div>
         </div>
-        <div class="form-group">
-          <label>배당 계획</label>
-          <select id="dividendPlan">
-            <option value="none">배당 없음 (사내유보)</option>
-            <option value="partial">일부 배당 (순익의 30%)</option>
-            <option value="full">전액 배당</option>
+      </details>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">배당 비율 (%)</label>
+          <div class="flex items-center gap-3">
+            <input type="range" id="dividendRatio" min="0" max="100" value="0" oninput="document.getElementById('divLabel').textContent=this.value+'%'" class="flex-1">
+            <span id="divLabel" class="text-sm font-bold w-12 text-right">0%</span>
+          </div>
+          <p class="text-xs text-muted-foreground mt-1">법인세 납부 후 순이익 중 배당 비율</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-muted-foreground mb-1.5">적용 세율 연도</label>
+          <select id="taxYear" class="w-full px-3 py-2.5 rounded-lg text-sm">
+            <option value="2026" selected>2026년~ (법인세 1%p 인상)</option>
+            <option value="2025">2025년 (현행)</option>
           </select>
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="simulate()">시뮬레이션 실행</button>
+      <button onclick="simulate()" class="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-lg transition text-sm">
+        시뮬레이션 실행
+      </button>
     </div>
 
     <!-- Results -->
-    <div id="results" style="display: none;">
-      <!-- Comparison -->
-      <div class="comparison">
-        <div class="compare-box individual">
-          <div class="type">👤 개인사업자 유지</div>
-          <div class="amount" id="individualTotal">0원</div>
-          <div class="sub">연간 총 세금</div>
+    <div id="results" class="hidden">
+      <!-- Comparison Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="rounded-xl border-2 border-orange-400 bg-orange-50 dark:bg-orange-950/30 p-5 text-center">
+          <div class="text-sm font-bold text-orange-600 dark:text-orange-400 mb-1">👤 개인사업자 유지</div>
+          <div class="text-2xl sm:text-3xl font-bold" id="indTotal">0원</div>
+          <div class="text-xs text-muted-foreground mt-1">연간 총 세금</div>
         </div>
-        <div class="compare-box corp">
-          <div class="type">🏢 법인 전환</div>
-          <div class="amount" id="corpTotal">0원</div>
-          <div class="sub">연간 총 세금</div>
+        <div class="rounded-xl border-2 border-violet-500 bg-violet-50 dark:bg-violet-950/30 p-5 text-center">
+          <div class="text-sm font-bold text-violet-600 dark:text-violet-400 mb-1">🏢 법인 전환</div>
+          <div class="text-2xl sm:text-3xl font-bold" id="corpTotalEl">0원</div>
+          <div class="text-xs text-muted-foreground mt-1">연간 총 세금</div>
         </div>
       </div>
 
       <!-- Savings -->
-      <div class="savings-box" id="savingsBox">
-        <div class="label">연간 예상 절세액</div>
-        <div class="amount" id="savingsAmount">0원</div>
-        <div class="desc" id="savingsDesc"></div>
+      <div id="savingsCard" class="rounded-xl p-5 text-center mb-4">
+        <div class="text-sm font-semibold" id="savLabel">연간 예상 절세액</div>
+        <div class="text-3xl font-bold mt-1" id="savAmount">0원</div>
+        <div class="text-xs mt-1" id="savDesc"></div>
       </div>
 
-      <!-- Chart -->
-      <div class="card">
-        <div class="card-title"><span class="icon">📈</span> 세금 비교 차트</div>
-        <div class="chart-container">
-          <div class="bar-chart">
-            <div class="bar-item">
-              <div class="bar individual" id="barIndividual" style="height: 100px;"></div>
-              <div class="bar-label">개인사업자</div>
-            </div>
-            <div class="bar-item">
-              <div class="bar corp" id="barCorp" style="height: 80px;"></div>
-              <div class="bar-label">법인</div>
-            </div>
-          </div>
+      <!-- Charts -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="bg-card border border-border rounded-xl p-5">
+          <h3 class="text-sm font-bold mb-3">📊 세금 비교 바 차트</h3>
+          <div class="chart-container" style="height:260px"><canvas id="barChart"></canvas></div>
+        </div>
+        <div class="bg-card border border-border rounded-xl p-5">
+          <h3 class="text-sm font-bold mb-3">🍩 법인 세금 구성</h3>
+          <div class="chart-container" style="height:260px"><canvas id="donutChart"></canvas></div>
         </div>
       </div>
 
       <!-- Detail Tables -->
-      <div class="card">
-        <div class="card-title"><span class="icon">📋</span> 상세 비교</div>
+      <div class="bg-card border border-border rounded-xl p-5 mb-4">
+        <h3 class="text-sm font-bold mb-4">📋 상세 비교</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <h4 class="text-sm font-bold text-orange-600 dark:text-orange-400 mb-2">👤 개인사업자</h4>
+            <div class="overflow-x-auto"><table class="w-full text-sm" id="indTable"></table></div>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-violet-600 dark:text-violet-400 mb-2">🏢 법인</h4>
+            <div class="overflow-x-auto"><table class="w-full text-sm" id="corpTable"></table></div>
+          </div>
+        </div>
+      </div>
 
-        <h4 style="margin-bottom: 12px; color: var(--individual);">👤 개인사업자 유지 시</h4>
-        <table class="detail-table" id="individualDetail"></table>
+      <!-- 부동산임대업 경고 -->
+      <div id="realestateWarning" class="hidden bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4 text-sm text-red-800 dark:text-red-200">
+        <strong>🏠 부동산임대업 주의:</strong> 부동산임대업 법인은 중소기업 세율 특례(2억 이하 10%) 적용이 배제될 수 있으며, 성실신고확인 대상 기준이 다릅니다. 반드시 세무사와 상담하세요.
+      </div>
 
-        <h4 style="margin: 24px 0 12px; color: var(--corp);">🏢 법인 전환 시</h4>
-        <table class="detail-table" id="corpDetail"></table>
+      <!-- 가지급금 경고 -->
+      <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-4 text-sm text-amber-800 dark:text-amber-200">
+        <strong>⚠️ 가지급금 리스크:</strong> 법인 자금을 대표 개인 용도로 사용하면 '가지급금'으로 처리됩니다. 인정이자(시가 4.6%) 부과, 대표 상여 처분으로 소득세 추가 발생, 가산세 부과 등의 불이익이 있습니다. 법인 자금과 개인 자금을 반드시 분리하세요.
       </div>
 
       <!-- Recommendation -->
-      <div class="card" id="recommendation">
-        <div class="card-title"><span class="icon">💡</span> 분석 결과</div>
-        <div id="recommendationText"></div>
+      <div class="bg-card border border-border rounded-xl p-5 mb-4" id="recCard">
+        <h3 class="text-sm font-bold mb-3">💡 분석 결과</h3>
+        <div id="recText"></div>
       </div>
 
-      <button class="btn btn-secondary no-print" onclick="window.print()" style="margin-top: 8px;">🖨️ 결과 인쇄하기</button>
+      <!-- Print -->
+      <button onclick="window.print()" class="no-print w-full py-2.5 border border-border rounded-lg text-sm font-semibold hover:bg-accent transition">
+        🖨️ 결과 인쇄 / PDF 저장
+      </button>
     </div>
   </div>
 
-  <!-- Checklist Tab -->
-  <div id="tab-checklist" style="display: none;">
-    <div class="card">
-      <div class="card-title"><span class="icon">✅</span> 법인전환 체크리스트</div>
-      <p style="font-size: 14px; color: var(--text-dim); margin-bottom: 16px;">
-        법인 전환 시 필요한 절차들을 확인하세요. 클릭하여 완료 표시할 수 있습니다.
-      </p>
-
-      <h4 style="margin-bottom: 12px; color: var(--primary);">📝 사전 준비</h4>
-      <ul class="checklist" id="checklistPre">
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">사업타당성 검토</div>
-            <div class="desc">법인전환의 필요성과 적정 시기 검토</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">세무사/회계사 상담</div>
-            <div class="desc">절세효과 및 법인 형태(주식회사/유한회사) 결정</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">자본금 결정</div>
-            <div class="desc">최소 자본금 제한 없음, 통상 1,000만원~1억원</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">상호 결정 및 중복 확인</div>
-            <div class="desc">인터넷등기소에서 상호 중복 여부 확인</div>
-          </div>
-        </li>
-      </ul>
-
-      <h4 style="margin: 24px 0 12px; color: var(--primary);">📄 법인 설립</h4>
-      <ul class="checklist" id="checklistSetup">
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">정관 작성</div>
-            <div class="desc">회사의 조직과 운영에 관한 기본 규칙</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">주주명부 작성</div>
-            <div class="desc">출자자 정보, 주식 수, 지분율 기재</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">자본금 납입</div>
-            <div class="desc">은행 계좌 개설 후 자본금 납입, 잔고증명서 발급</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">법인 설립등기</div>
-            <div class="desc">등기소 방문 또는 인터넷등기소 신청</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">법인 인감 등록</div>
-            <div class="desc">법인 인감 제작 및 등록</div>
-          </div>
-        </li>
-      </ul>
-
-      <h4 style="margin: 24px 0 12px; color: var(--primary);">🏛️ 신고 및 등록</h4>
-      <ul class="checklist" id="checklistRegister">
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">사업자등록 신청</div>
-            <div class="desc">관할 세무서 또는 홈택스에서 법인 사업자등록</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">개인사업자 폐업 신고</div>
-            <div class="desc">기존 개인사업자 폐업 처리 (부가세 확정신고 포함)</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">4대보험 사업장 가입</div>
-            <div class="desc">법인 명의로 4대보험 사업장 신규 가입</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">법인 통장 개설</div>
-            <div class="desc">법인 명의 사업용 계좌 개설</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">계약서/거래처 명의 변경</div>
-            <div class="desc">임대차계약, 거래처 계약 등 법인 명의로 변경</div>
-          </div>
-        </li>
-      </ul>
-
-      <h4 style="margin: 24px 0 12px; color: var(--primary);">💼 자산 이전 (해당 시)</h4>
-      <ul class="checklist" id="checklistAsset">
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">현물출자 또는 사업양수도 결정</div>
-            <div class="desc">자산 이전 방식 결정 (세무사 상담 필수)</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">자산/부채 실사</div>
-            <div class="desc">이전할 자산과 부채 목록 정리, 감정평가</div>
-          </div>
-        </li>
-        <li>
-          <div class="check" onclick="toggleCheck(this)"></div>
-          <div class="content">
-            <div class="title">양도소득세/취득세 검토</div>
-            <div class="desc">부동산 등 자산 이전 시 세금 확인</div>
-          </div>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- Info Tab -->
-  <div id="tab-info" style="display: none;">
-    <div class="card">
-      <div class="card-title"><span class="icon">📚</span> 법인전환 기본 안내</div>
-
-      <div class="accordion open">
-        <div class="accordion-header" onclick="toggleAccordion(this)">
-          법인전환의 장점
-          <span class="accordion-icon">▼</span>
-        </div>
-        <div class="accordion-body">
-          <ul style="padding-left: 20px; font-size: 14px; color: var(--text-dim);">
-            <li style="margin-bottom: 8px;"><strong>세금 절감:</strong> 소득이 높을수록 법인세율(10~25%)이 종합소득세율(6~45%)보다 유리</li>
-            <li style="margin-bottom: 8px;"><strong>대외 신뢰도:</strong> 법인은 개인사업자보다 거래처, 금융기관에서 신뢰도가 높음</li>
-            <li style="margin-bottom: 8px;"><strong>유한책임:</strong> 주주는 출자액 한도 내에서만 책임 (개인재산 보호)</li>
-            <li style="margin-bottom: 8px;"><strong>자금조달:</strong> 투자유치, 대출 등에서 유리</li>
-            <li style="margin-bottom: 8px;"><strong>사업 승계:</strong> 주식 양도를 통한 사업 승계 용이</li>
-            <li><strong>비용 인정:</strong> 대표자 급여, 퇴직금 등 경비 인정 폭 넓음</li>
-          </ul>
-        </div>
+  <!-- ==================== TAB: 5-YEAR ==================== -->
+  <div id="tab-fiveyear" class="hidden">
+    <div class="bg-card border border-border rounded-xl p-5 mb-4">
+      <h2 class="text-base font-bold mb-2 flex items-center gap-2">📈 5년 누적 절세 시뮬레이션</h2>
+      <p class="text-sm text-muted-foreground mb-4">법인 설립비용, 세무기장료 등 운영비를 포함한 실질 절세액을 5년간 누적 비교합니다.</p>
+      <div class="bg-muted rounded-lg p-4 mb-4 text-sm" id="fiveYearNote">
+        먼저 <strong>세금 비교</strong> 탭에서 시뮬레이션을 실행하세요.
       </div>
-
-      <div class="accordion">
-        <div class="accordion-header" onclick="toggleAccordion(this)">
-          법인전환의 단점
-          <span class="accordion-icon">▼</span>
+      <div id="fiveYearContent" class="hidden">
+        <!-- 법인 설립비 상세 -->
+        <div class="mb-5">
+          <h3 class="text-sm font-bold mb-3">🏗️ 법인 설립 비용 상세 (1회성)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="setupCostTable"></table>
+          </div>
         </div>
-        <div class="accordion-body">
-          <ul style="padding-left: 20px; font-size: 14px; color: var(--text-dim);">
-            <li style="margin-bottom: 8px;"><strong>설립/운영 비용:</strong> 법인 설립비, 세무기장료, 법인세 신고비용 등 추가</li>
-            <li style="margin-bottom: 8px;"><strong>이중과세:</strong> 법인세 납부 후 배당 시 배당소득세 추가 발생</li>
-            <li style="margin-bottom: 8px;"><strong>자금 인출 제한:</strong> 법인 자금을 대표가 임의로 사용 불가 (가지급금 문제)</li>
-            <li style="margin-bottom: 8px;"><strong>의무사항 증가:</strong> 주주총회, 이사회 등 형식적 절차 필요</li>
-            <li><strong>4대보험 의무가입:</strong> 대표자도 4대보험 의무가입</li>
-          </ul>
+        <div class="mb-5">
+          <h3 class="text-sm font-bold mb-3">📅 연간 추가 운영 비용</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm" id="annualCostTable"></table>
+          </div>
         </div>
-      </div>
-
-      <div class="accordion">
-        <div class="accordion-header" onclick="toggleAccordion(this)">
-          법인전환 적정 시기
-          <span class="accordion-icon">▼</span>
-        </div>
-        <div class="accordion-body">
-          <ul style="padding-left: 20px; font-size: 14px; color: var(--text-dim);">
-            <li style="margin-bottom: 8px;"><strong>연 순이익 5,000만원 이상:</strong> 절세 효과가 본격적으로 발생</li>
-            <li style="margin-bottom: 8px;"><strong>연 순이익 1억원 이상:</strong> 법인 전환이 확실히 유리</li>
-            <li style="margin-bottom: 8px;"><strong>외부 투자 유치 계획:</strong> 법인이 필수</li>
-            <li style="margin-bottom: 8px;"><strong>사업 확장/승계 계획:</strong> 법인이 유리</li>
-            <li><strong>거래처가 법인 거래 선호:</strong> 대기업/공공기관 거래 시</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="accordion">
-        <div class="accordion-header" onclick="toggleAccordion(this)">
-          세율 비교 (2026년 기준)
-          <span class="accordion-icon">▼</span>
-        </div>
-        <div class="accordion-body">
-          <h5 style="margin-bottom: 8px;">📌 종합소득세율 (개인사업자)</h5>
-          <table class="detail-table" style="margin-bottom: 16px;">
-            <tr><td>1,400만원 이하</td><td class="amount">6%</td></tr>
-            <tr><td>1,400만원 ~ 5,000만원</td><td class="amount">15%</td></tr>
-            <tr><td>5,000만원 ~ 8,800만원</td><td class="amount">24%</td></tr>
-            <tr><td>8,800만원 ~ 1.5억원</td><td class="amount">35%</td></tr>
-            <tr><td>1.5억원 ~ 3억원</td><td class="amount">38%</td></tr>
-            <tr><td>3억원 ~ 5억원</td><td class="amount">40%</td></tr>
-            <tr><td>5억원 ~ 10억원</td><td class="amount">42%</td></tr>
-            <tr><td>10억원 초과</td><td class="amount">45%</td></tr>
-          </table>
-
-          <h5 style="margin-bottom: 8px;">📌 법인세율 (2026년~)</h5>
-          <table class="detail-table">
-            <tr><td>2억원 이하</td><td class="amount">10%</td></tr>
-            <tr><td>2억원 ~ 200억원</td><td class="amount">20%</td></tr>
-            <tr><td>200억원 ~ 3,000억원</td><td class="amount">22%</td></tr>
-            <tr><td>3,000억원 초과</td><td class="amount">25%</td></tr>
-          </table>
-          <p style="font-size: 12px; color: var(--text-dim); margin-top: 8px;">* 지방소득세 10% 별도</p>
+        <div class="chart-container mb-4" style="height:320px"><canvas id="fiveYearChart"></canvas></div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" id="fiveYearTable"></table>
         </div>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- ==================== TAB: DIVIDEND ==================== -->
+  <div id="tab-dividend" class="hidden">
+    <div class="bg-card border border-border rounded-xl p-5 mb-4">
+      <h2 class="text-base font-bold mb-2 flex items-center gap-2">💸 배당 전략 시뮬레이션</h2>
+      <p class="text-sm text-muted-foreground mb-4">배당 비율에 따른 세금 변화를 비교합니다. 배당소득세 vs 급여소득세 최적 비율을 찾아보세요.</p>
+      <div class="bg-muted rounded-lg p-4 mb-4 text-sm" id="divNote">
+        먼저 <strong>세금 비교</strong> 탭에서 시뮬레이션을 실행하세요.
+      </div>
+      <div id="divContent" class="hidden">
+        <div class="chart-container mb-4" style="height:320px"><canvas id="divChart"></canvas></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div class="bg-muted rounded-lg p-4 text-center">
+            <div class="text-xs text-muted-foreground">급여만 (배당 0%)</div>
+            <div class="text-lg font-bold" id="divOnly0"></div>
+          </div>
+          <div class="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-4 text-center border-2 border-violet-400">
+            <div class="text-xs text-violet-600 dark:text-violet-400 font-bold">🏆 최적 배당 비율</div>
+            <div class="text-lg font-bold" id="divOptimal"></div>
+          </div>
+          <div class="bg-muted rounded-lg p-4 text-center">
+            <div class="text-xs text-muted-foreground">전액 배당 (100%)</div>
+            <div class="text-lg font-bold" id="divOnly100"></div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" id="divTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: METHODS ==================== -->
+  <div id="tab-methods" class="hidden">
+    <div class="bg-card border border-border rounded-xl p-5 mb-4">
+      <h2 class="text-base font-bold mb-2">🔄 법인전환 방식 비교</h2>
+      <p class="text-sm text-muted-foreground mb-5">3가지 주요 전환 방식의 장단점을 비교합니다.</p>
+
+      <div class="grid gap-4">
+        <!-- 현물출자 -->
+        <div class="border border-border rounded-xl p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900 text-violet-600 dark:text-violet-300 text-sm font-bold">1</span>
+            <h3 class="font-bold">현물출자</h3>
+          </div>
+          <p class="text-sm text-muted-foreground mb-3">개인사업자의 사업용 자산을 법인에 출자하고, 그 대가로 주식을 받는 방식</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div class="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">
+              <div class="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">✅ 장점</div>
+              <ul class="list-disc pl-4 text-muted-foreground space-y-1">
+                <li>조세특례제한법상 양도소득세 이월과세 혜택</li>
+                <li>취득세 75% 감면 가능 (감면 조건 충족 시)</li>
+                <li>사업 연속성 유지</li>
+                <li>부채 포괄 승계 가능</li>
+              </ul>
+            </div>
+            <div class="bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
+              <div class="font-semibold text-red-700 dark:text-red-400 mb-1">❌ 단점</div>
+              <ul class="list-disc pl-4 text-muted-foreground space-y-1">
+                <li>감정평가 비용 발생 (수백만원)</li>
+                <li>절차 복잡, 기간 2~3개월 소요</li>
+                <li>검사인 조사 필요 (법원)</li>
+                <li>5년 내 주식 처분 시 양도세 추징</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 사업양수도 -->
+        <div class="border border-border rounded-xl p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-sm font-bold">2</span>
+            <h3 class="font-bold">사업양수도 (포괄양수도)</h3>
+          </div>
+          <p class="text-sm text-muted-foreground mb-3">개인사업의 자산·부채를 법인에 양도하고, 대금을 수령하는 방식</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div class="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">
+              <div class="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">✅ 장점</div>
+              <ul class="list-disc pl-4 text-muted-foreground space-y-1">
+                <li>절차 비교적 간단</li>
+                <li>부가가치세 면제 (포괄양수도 시)</li>
+                <li>사업 연속성 유지</li>
+                <li>조특법상 세제 혜택 가능</li>
+              </ul>
+            </div>
+            <div class="bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
+              <div class="font-semibold text-red-700 dark:text-red-400 mb-1">❌ 단점</div>
+              <ul class="list-disc pl-4 text-muted-foreground space-y-1">
+                <li>양도소득세 발생 가능 (부동산 등)</li>
+                <li>취득세 감면 요건 엄격</li>
+                <li>양수 대금 마련 필요</li>
+                <li>계약 관계 재설정 필요</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 신규법인설립 후 폐업 -->
+        <div class="border border-border rounded-xl p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300 text-sm font-bold">3</span>
+            <h3 class="font-bold">신규 법인설립 + 개인 폐업</h3>
+          </div>
+          <p class="text-sm text-muted-foreground mb-3">새로운 법인을 설립하고, 기존 개인사업자를 폐업하는 가장 단순한 방식</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div class="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">
+              <div class="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">✅ 장점</div>
+              <ul class="list-disc pl-4 text-muted-foreground space-y-1">
+                <li>절차가 가장 단순</li>
+                <li>빠른 설립 가능 (1~2주)</li>
+                <li>자산 이전 불필요 시 비용 최소</li>
+                <li>깔끔한 분리</li>
+              </ul>
+            </div>
+            <div class="bg-red-50 dark:bg-red-950/30 rounded-lg p-3">
+              <div class="font-semibold text-red-700 dark:text-red-400 mb-1">❌ 단점</div>
+              <ul class="list-disc pl-4 text-muted-foreground space-y-1">
+                <li>조특법 세제 혜택 없음</li>
+                <li>사업 연속성 단절 (거래처 재계약)</li>
+                <li>업력 초기화</li>
+                <li>자산 이전 시 양도세·취득세 전액 발생</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 bg-muted rounded-lg p-4 text-sm">
+        <strong>💡 추천:</strong> 사업용 자산(부동산, 장비 등)이 많다면 <strong>현물출자</strong>가 세제 혜택이 큽니다. 자산이 적거나 빠른 전환이 필요하면 <strong>신규 설립 + 폐업</strong>이 실용적입니다. 반드시 세무사와 상담하여 최적의 방식을 결정하세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: CHECKLIST ==================== -->
+  <div id="tab-checklist" class="hidden">
+    <div class="bg-card border border-border rounded-xl p-5 mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">✅ 법인전환 체크리스트</h2>
+        <span class="text-xs font-bold text-muted-foreground" id="checkProgress">0/18 완료</span>
+      </div>
+      <!-- Progress bar -->
+      <div class="w-full bg-muted rounded-full h-2 mb-5">
+        <div id="progressBar" class="bg-violet-600 h-2 rounded-full transition-all duration-300" style="width:0%"></div>
+      </div>
+
+      <div id="checklistArea"></div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: INFO ==================== -->
+  <div id="tab-info" class="hidden">
+    <div class="bg-card border border-border rounded-xl p-5 mb-4">
+      <h2 class="text-base font-bold mb-4">📚 세율 비교 (2025 vs 2026)</h2>
+
+      <h3 class="text-sm font-bold mb-2">📌 종합소득세율 (변동 없음)</h3>
+      <div class="overflow-x-auto mb-5">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border"><th class="text-left py-2 px-3 text-xs text-muted-foreground">과세표준</th><th class="text-right py-2 px-3 text-xs text-muted-foreground">세율</th><th class="text-right py-2 px-3 text-xs text-muted-foreground">누진공제</th></tr></thead>
+          <tbody class="divide-y divide-border">
+            <tr><td class="py-2 px-3">1,400만원 이하</td><td class="text-right py-2 px-3 font-semibold">6%</td><td class="text-right py-2 px-3">-</td></tr>
+            <tr><td class="py-2 px-3">1,400만~5,000만원</td><td class="text-right py-2 px-3 font-semibold">15%</td><td class="text-right py-2 px-3">126만원</td></tr>
+            <tr><td class="py-2 px-3">5,000만~8,800만원</td><td class="text-right py-2 px-3 font-semibold">24%</td><td class="text-right py-2 px-3">576만원</td></tr>
+            <tr><td class="py-2 px-3">8,800만~1.5억원</td><td class="text-right py-2 px-3 font-semibold">35%</td><td class="text-right py-2 px-3">1,544만원</td></tr>
+            <tr><td class="py-2 px-3">1.5억~3억원</td><td class="text-right py-2 px-3 font-semibold">38%</td><td class="text-right py-2 px-3">1,994만원</td></tr>
+            <tr><td class="py-2 px-3">3억~5억원</td><td class="text-right py-2 px-3 font-semibold">40%</td><td class="text-right py-2 px-3">2,594만원</td></tr>
+            <tr><td class="py-2 px-3">5억~10억원</td><td class="text-right py-2 px-3 font-semibold">42%</td><td class="text-right py-2 px-3">3,594만원</td></tr>
+            <tr><td class="py-2 px-3">10억원 초과</td><td class="text-right py-2 px-3 font-semibold">45%</td><td class="text-right py-2 px-3">6,594만원</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="text-sm font-bold mb-2">📌 법인세율 비교</h3>
+      <div class="overflow-x-auto mb-4">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-border"><th class="text-left py-2 px-3 text-xs text-muted-foreground">과세표준</th><th class="text-right py-2 px-3 text-xs text-muted-foreground">2025년</th><th class="text-right py-2 px-3 text-xs text-violet-600 dark:text-violet-400 font-bold">2026년~</th></tr></thead>
+          <tbody class="divide-y divide-border">
+            <tr><td class="py-2 px-3">2억원 이하</td><td class="text-right py-2 px-3">9%</td><td class="text-right py-2 px-3 font-bold text-violet-600 dark:text-violet-400">10%</td></tr>
+            <tr><td class="py-2 px-3">2억~200억원</td><td class="text-right py-2 px-3">19%</td><td class="text-right py-2 px-3 font-bold text-violet-600 dark:text-violet-400">20%</td></tr>
+            <tr><td class="py-2 px-3">200억~3,000억원</td><td class="text-right py-2 px-3">21%</td><td class="text-right py-2 px-3 font-bold text-violet-600 dark:text-violet-400">22%</td></tr>
+            <tr><td class="py-2 px-3">3,000억원 초과</td><td class="text-right py-2 px-3">24%</td><td class="text-right py-2 px-3 font-bold text-violet-600 dark:text-violet-400">25%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-muted-foreground">* 지방소득세 10% 별도. 2026년부터 전 구간 1%p 인상 적용.</p>
+    </div>
+
+    <!-- 장단점 아코디언 -->
+    <div class="space-y-3">
+      <details class="bg-card border border-border rounded-xl">
+        <summary class="px-5 py-4 font-semibold text-sm cursor-pointer hover:bg-accent rounded-xl">🟢 법인전환의 장점</summary>
+        <div class="px-5 pb-4 text-sm text-muted-foreground">
+          <ul class="list-disc pl-5 space-y-2 mt-2">
+            <li><strong>세금 절감:</strong> 소득이 높을수록 법인세율(10~25%)이 종합소득세율(6~45%)보다 유리</li>
+            <li><strong>대외 신뢰도:</strong> 거래처·금융기관에서 법인 우대</li>
+            <li><strong>유한책임:</strong> 출자액 한도 내에서만 책임 (개인재산 보호)</li>
+            <li><strong>자금조달:</strong> 투자유치·대출에서 유리</li>
+            <li><strong>사업 승계:</strong> 주식 양도로 용이</li>
+            <li><strong>비용 인정:</strong> 대표자 급여·퇴직금 등 경비 인정 폭 넓음</li>
+          </ul>
+        </div>
+      </details>
+      <details class="bg-card border border-border rounded-xl">
+        <summary class="px-5 py-4 font-semibold text-sm cursor-pointer hover:bg-accent rounded-xl">🔴 법인전환의 단점</summary>
+        <div class="px-5 pb-4 text-sm text-muted-foreground">
+          <ul class="list-disc pl-5 space-y-2 mt-2">
+            <li><strong>설립/운영 비용:</strong> 법인 설립비·세무기장료·법인세 신고비용 등 추가</li>
+            <li><strong>이중과세:</strong> 법인세 납부 후 배당 시 배당소득세 추가 발생</li>
+            <li><strong>자금 인출 제한:</strong> 법인 자금 임의 사용 불가 (가지급금 문제)</li>
+            <li><strong>의무사항 증가:</strong> 주주총회·이사회 등 절차 필요</li>
+            <li><strong>4대보험 의무가입:</strong> 대표자도 의무가입 (비용 증가)</li>
+          </ul>
+        </div>
+      </details>
+      <details class="bg-card border border-border rounded-xl">
+        <summary class="px-5 py-4 font-semibold text-sm cursor-pointer hover:bg-accent rounded-xl">⏰ 법인전환 적정 시기</summary>
+        <div class="px-5 pb-4 text-sm text-muted-foreground">
+          <ul class="list-disc pl-5 space-y-2 mt-2">
+            <li><strong>연 순이익 5,000만원 이상:</strong> 절세 효과 본격 발생</li>
+            <li><strong>연 순이익 1억원 이상:</strong> 법인 전환 확실히 유리</li>
+            <li><strong>외부 투자 유치 계획</strong>이 있을 때</li>
+            <li><strong>사업 확장/승계 계획</strong>이 있을 때</li>
+            <li><strong>대기업/공공기관 거래</strong> 시 법인 필수</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-border py-6 px-4 text-center text-xs text-muted-foreground">
+  <div class="max-w-5xl mx-auto space-y-2">
+    <p><strong>면책조항:</strong> 본 시뮬레이터는 참고 목적으로 제공되며, 법적 효력이 없습니다. 실제 세금은 개인 상황에 따라 달라질 수 있으므로 반드시 세무 전문가와 상담하세요.</p>
+    <p>세율 출처: <a href="https://www.nts.go.kr" target="_blank" class="underline hover:text-foreground">국세청</a> · <a href="https://www.law.go.kr" target="_blank" class="underline hover:text-foreground">국가법령정보센터</a> · 2026년 세법 개정안 기준</p>
+    <div class="mt-3 pt-3 border-t border-border flex flex-col items-center gap-1.5">
+      <div class="flex items-center gap-2">
+        <img src="logo.png" alt="엘비즈 파트너스" class="w-5 h-5 object-contain opacity-60">
+        <span class="font-medium text-foreground">엘비즈 파트너스</span>
+      </div>
+      <p>이상수 대표 · 010-3709-5785 · <a href="mailto:sangsu0916@naver.com" class="underline hover:text-foreground">sangsu0916@naver.com</a></p>
+      <p class="text-muted-foreground/60">© 2026 법인전환 시뮬레이터 · 엘비즈 파트너스</p>
+    </div>
+  </div>
+</footer>
 
 <script>
-// Format number with commas
-function formatNumber(input) {
-  let value = input.value.replace(/[^\d]/g, '');
-  input.value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+// ===== Utilities =====
+const $ = id => document.getElementById(id);
+const fmt = el => { el.value = el.value.replace(/[^\d]/g,'').replace(/\B(?=(\d{3})+(?!\d))/g,','); };
+const pn = s => parseInt((s||'0').replace(/[^\d]/g,''))||0;
+const fc = n => { if(Math.abs(n)>=1e8) return (n/1e8).toFixed(1).replace(/\.0$/,'')+'억원'; if(Math.abs(n)>=1e4) return Math.round(n/1e4).toLocaleString()+'만원'; return Math.round(n).toLocaleString()+'원'; };
+const ff = n => Math.round(n).toLocaleString('ko-KR')+'원';
+
+// ===== Dark Mode =====
+function toggleDark() {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  localStorage.setItem('dark', isDark);
+  $('darkIcon').textContent = isDark ? '☀️' : '🌙';
+  // Recreate charts if they exist
+  if(window._lastSim) { renderCharts(window._lastSim); }
+}
+if(localStorage.getItem('dark')==='true' || (!localStorage.getItem('dark') && matchMedia('(prefers-color-scheme:dark)').matches)) {
+  document.documentElement.classList.add('dark');
+  document.addEventListener('DOMContentLoaded', ()=>{ $('darkIcon').textContent='☀️'; });
 }
 
-function parseNumber(str) {
-  return parseInt((str || '0').replace(/[^\d]/g, '')) || 0;
+// ===== Tabs =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el=>el.classList.add('hidden'));
+  $(('tab-'+tab)).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b=>{ b.classList.remove('bg-violet-600','text-white','dark:bg-violet-700'); b.classList.add('text-muted-foreground'); });
+  if(btn){ btn.classList.add('bg-violet-600','text-white','dark:bg-violet-700'); btn.classList.remove('text-muted-foreground'); }
 }
+// init active tab style
+document.addEventListener('DOMContentLoaded', ()=>{
+  const first = document.querySelector('.tab-btn');
+  if(first){ first.classList.add('bg-violet-600','text-white','dark:bg-violet-700'); first.classList.remove('text-muted-foreground'); }
+  buildChecklist();
+});
 
-function formatCurrency(num) {
-  if (num >= 100000000) {
-    return (num / 100000000).toFixed(1).replace(/\.0$/, '') + '억원';
-  } else if (num >= 10000) {
-    return Math.round(num / 10000).toLocaleString() + '만원';
-  }
-  return Math.round(num).toLocaleString() + '원';
-}
-
-function formatCurrencyFull(num) {
-  return Math.round(num).toLocaleString('ko-KR') + '원';
-}
-
-// Tab switching
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('tab-simulator').style.display = tab === 'simulator' ? '' : 'none';
-  document.getElementById('tab-checklist').style.display = tab === 'checklist' ? '' : 'none';
-  document.getElementById('tab-info').style.display = tab === 'info' ? '' : 'none';
-}
-
-// Accordion
-function toggleAccordion(el) {
-  el.parentElement.classList.toggle('open');
-}
-
-// Checklist
-function toggleCheck(el) {
-  el.classList.toggle('checked');
-  if (el.classList.contains('checked')) {
-    el.innerHTML = '✓';
-  } else {
-    el.innerHTML = '';
-  }
-}
-
-// Tax calculation - 종합소득세 (개인)
-function calculateIncomeTax(income) {
-  const brackets = [
-    { limit: 14000000, rate: 0.06, deduction: 0 },
-    { limit: 50000000, rate: 0.15, deduction: 1260000 },
-    { limit: 88000000, rate: 0.24, deduction: 5760000 },
-    { limit: 150000000, rate: 0.35, deduction: 15440000 },
-    { limit: 300000000, rate: 0.38, deduction: 19940000 },
-    { limit: 500000000, rate: 0.40, deduction: 25940000 },
-    { limit: 1000000000, rate: 0.42, deduction: 35940000 },
-    { limit: Infinity, rate: 0.45, deduction: 65940000 }
+// ===== Tax Calculations =====
+function calcIncomeTax(income, year) {
+  // 종합소득세 - 동일 (2025/2026 변동 없음)
+  const b = [
+    {l:14000000,r:0.06,d:0},{l:50000000,r:0.15,d:1260000},{l:88000000,r:0.24,d:5760000},
+    {l:150000000,r:0.35,d:15440000},{l:300000000,r:0.38,d:19940000},{l:500000000,r:0.40,d:25940000},
+    {l:1000000000,r:0.42,d:35940000},{l:Infinity,r:0.45,d:65940000}
   ];
-
-  for (const bracket of brackets) {
-    if (income <= bracket.limit) {
-      const tax = income * bracket.rate - bracket.deduction;
-      return Math.max(0, tax);
-    }
-  }
+  for(const x of b) if(income<=x.l) return Math.max(0, income*x.r - x.d);
   return 0;
 }
 
-// 법인세 계산
-function calculateCorpTax(income) {
+function calcCorpTax(income, year) {
+  const offset = year==='2025' ? -0.01 : 0; // 2025: 각 구간 1%p 낮음
   const brackets = [
-    { limit: 200000000, rate: 0.10 },
-    { limit: 20000000000, rate: 0.20 },
-    { limit: 300000000000, rate: 0.22 },
-    { limit: Infinity, rate: 0.25 }
+    {l:200000000, r:0.10+offset},
+    {l:20000000000, r:0.20+offset},
+    {l:300000000000, r:0.22+offset},
+    {l:Infinity, r:0.25+offset}
   ];
-
-  let tax = 0;
-  let remaining = income;
-  let prevLimit = 0;
-
-  for (const bracket of brackets) {
-    const taxable = Math.min(remaining, bracket.limit - prevLimit);
-    if (taxable <= 0) break;
-    tax += taxable * bracket.rate;
-    remaining -= taxable;
-    prevLimit = bracket.limit;
-    if (remaining <= 0) break;
+  let tax=0, rem=income, prev=0;
+  for(const b of brackets) {
+    const t = Math.min(rem, b.l-prev);
+    if(t<=0)break;
+    tax += t*b.r;
+    rem -= t;
+    prev = b.l;
+    if(rem<=0)break;
   }
-
   return tax;
 }
 
-// 배당소득세 계산 (금융소득종합과세 고려)
-function calculateDividendTax(dividend, otherIncome) {
-  // 2천만원 이하: 15.4% 원천징수로 종결
-  // 2천만원 초과: 종합과세
-  if (dividend <= 20000000) {
-    return dividend * 0.154; // 14% + 지방소득세 1.4%
-  } else {
-    // 간소화: 초과분은 종합과세 (세율 적용)
-    const withheld = 20000000 * 0.154;
-    const excess = dividend - 20000000;
-    const combinedIncome = otherIncome + excess;
-    const totalTax = calculateIncomeTax(combinedIncome);
-    const baseTax = calculateIncomeTax(otherIncome);
-    return withheld + (totalTax - baseTax) * 1.1; // 지방소득세 포함
-  }
+function calcDividendTax(div, otherIncome, year) {
+  if(div<=0) return 0;
+  if(div<=20000000) return div*0.154;
+  const w = 20000000*0.154;
+  const excess = div-20000000;
+  const combined = otherIncome+excess;
+  const totalTax = calcIncomeTax(combined, year);
+  const baseTax = calcIncomeTax(otherIncome, year);
+  return w + (totalTax-baseTax)*1.1;
 }
 
-// Simulation
+// ===== Main Simulation =====
+let barChartInst, donutChartInst, fiveYearChartInst, divChartInst;
+
 function simulate() {
-  const revenue = parseNumber(document.getElementById('revenue').value);
-  const profit = parseNumber(document.getElementById('profit').value);
-  const ceoSalary = parseNumber(document.getElementById('ceoSalary').value);
-  const employees = parseInt(document.getElementById('employees').value) || 0;
-  const dividendPlan = document.getElementById('dividendPlan').value;
+  const profit = pn($('profit').value);
+  const ceoSalaryM = pn($('ceoSalary').value);
+  const divRatio = parseInt($('dividendRatio').value)/100;
+  const year = $('taxYear').value;
+  const industry = $('industry').value;
 
-  if (!profit) {
-    alert('연간 순이익을 입력해주세요.');
-    return;
-  }
+  // 소득공제
+  const dependents = parseInt($('dependents').value)||1;
+  const pension = pn($('pension').value);
+  const otherDed = pn($('otherDeduction').value);
+  const totalDeduction = dependents*1500000 + pension + otherDed;
 
-  // === 개인사업자 ===
-  // 종합소득세 + 지방소득세
-  const individual_incomeTax = calculateIncomeTax(profit);
-  const individual_localTax = individual_incomeTax * 0.1;
-  const individual_total = individual_incomeTax + individual_localTax;
+  if(!profit){ alert('연간 순이익을 입력해주세요.'); return; }
+
+  const yearlyCeo = ceoSalaryM*12;
+
+  // === 개인 ===
+  const indTaxable = Math.max(0, profit - totalDeduction);
+  const indIncome = calcIncomeTax(indTaxable, year);
+  const indLocal = indIncome*0.1;
+  const indTotal = indIncome+indLocal;
 
   // === 법인 ===
-  const yearlyCeoSalary = ceoSalary * 12;
+  const corpProfit = Math.max(0, profit-yearlyCeo);
+  const corpTax = calcCorpTax(corpProfit, year);
+  const corpLocal = corpTax*0.1;
 
-  // 대표자 급여를 비용으로 처리한 후 남은 법인 소득
-  const corpProfit = Math.max(0, profit - yearlyCeoSalary);
+  // 대표 급여 소득세 (근로소득공제 간이)
+  const ceoTaxable = Math.max(0, yearlyCeo - totalDeduction);
+  const ceoIncome = calcIncomeTax(ceoTaxable, year);
+  const ceoLocal = ceoIncome*0.1;
 
-  // 법인세
-  const corp_corpTax = calculateCorpTax(corpProfit);
-  const corp_corpLocalTax = corp_corpTax * 0.1;
+  // 배당
+  const afterCorpTax = corpProfit - corpTax - corpLocal;
+  const divAmount = Math.max(0, afterCorpTax * divRatio);
+  const divTax = calcDividendTax(divAmount, yearlyCeo, year);
 
-  // 대표자 급여에 대한 소득세
-  const corp_ceoIncomeTax = calculateIncomeTax(yearlyCeoSalary);
-  const corp_ceoLocalTax = corp_ceoIncomeTax * 0.1;
+  const corpTotal = corpTax+corpLocal+ceoIncome+ceoLocal+divTax;
+  const savings = indTotal - corpTotal;
+  const ceo4ins = yearlyCeo*0.0945*2;
 
-  // 대표자 4대보험 (사업주 부담분 추가 비용)
-  const corp_4insurance = yearlyCeoSalary * 0.0945 * 2; // 사업주+근로자 부담 모두 회사 관점에서는 비용
+  // Store for other tabs
+  window._lastSim = { profit, yearlyCeo, divRatio, year, industry, totalDeduction, indTotal, corpTotal, savings, corpProfit, corpTax, corpLocal, ceoIncome, ceoLocal, divAmount, divTax, afterCorpTax, indIncome, indLocal, indTaxable, ceoTaxable, ceo4ins };
 
-  // 배당세
-  let dividendAmount = 0;
-  let dividendTax = 0;
-  const afterCorpTax = corpProfit - corp_corpTax - corp_corpLocalTax;
+  // Show results
+  $('results').classList.remove('hidden');
+  $('indTotal').textContent = fc(indTotal);
+  $('corpTotalEl').textContent = fc(corpTotal);
 
-  if (dividendPlan === 'partial') {
-    dividendAmount = afterCorpTax * 0.3;
-  } else if (dividendPlan === 'full') {
-    dividendAmount = afterCorpTax;
-  }
-
-  if (dividendAmount > 0) {
-    dividendTax = calculateDividendTax(dividendAmount, yearlyCeoSalary);
-  }
-
-  const corp_total = corp_corpTax + corp_corpLocalTax + corp_ceoIncomeTax + corp_ceoLocalTax + dividendTax;
-
-  // 절세액
-  const savings = individual_total - corp_total;
-
-  // Display results
-  document.getElementById('results').style.display = '';
-  document.getElementById('individualTotal').textContent = formatCurrency(individual_total);
-  document.getElementById('corpTotal').textContent = formatCurrency(corp_total);
-
-  const savingsBox = document.getElementById('savingsBox');
-  const savingsAmount = document.getElementById('savingsAmount');
-  const savingsDesc = document.getElementById('savingsDesc');
-
-  if (savings > 0) {
-    savingsBox.classList.remove('negative');
-    savingsAmount.textContent = formatCurrency(savings);
-    savingsDesc.textContent = '법인 전환 시 연간 절세 가능';
+  const sc = $('savingsCard');
+  if(savings>0) {
+    sc.className = 'rounded-xl p-5 text-center mb-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800';
+    $('savLabel').className = 'text-sm font-semibold text-emerald-700 dark:text-emerald-400';
+    $('savAmount').className = 'text-3xl font-bold mt-1 text-emerald-700 dark:text-emerald-400';
+    $('savAmount').textContent = fc(savings);
+    $('savDesc').className = 'text-xs mt-1 text-emerald-600 dark:text-emerald-400';
+    $('savDesc').textContent = '법인 전환 시 연간 절세 가능';
   } else {
-    savingsBox.classList.add('negative');
-    savingsAmount.textContent = formatCurrency(Math.abs(savings));
-    savingsDesc.textContent = '현재 상황에서는 개인사업자가 유리';
+    sc.className = 'rounded-xl p-5 text-center mb-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800';
+    $('savLabel').className = 'text-sm font-semibold text-red-700 dark:text-red-400';
+    $('savAmount').className = 'text-3xl font-bold mt-1 text-red-700 dark:text-red-400';
+    $('savAmount').textContent = fc(Math.abs(savings));
+    $('savDesc').className = 'text-xs mt-1 text-red-600 dark:text-red-400';
+    $('savDesc').textContent = '현재 상황에서는 개인사업자가 유리';
   }
 
-  // Chart
-  const maxTax = Math.max(individual_total, corp_total);
-  const barIndividual = document.getElementById('barIndividual');
-  const barCorp = document.getElementById('barCorp');
-  barIndividual.style.height = (individual_total / maxTax * 180) + 'px';
-  barCorp.style.height = (corp_total / maxTax * 180) + 'px';
-  barIndividual.textContent = formatCurrency(individual_total);
-  barCorp.textContent = formatCurrency(corp_total);
+  // 부동산임대업 경고
+  $('realestateWarning').classList.toggle('hidden', industry!=='realestate');
 
-  // Detail table - Individual
-  document.getElementById('individualDetail').innerHTML = `
-    <thead><tr><th>항목</th><th class="amount">금액</th></tr></thead>
-    <tbody>
-      <tr><td>과세표준 (순이익)</td><td class="amount">${formatCurrencyFull(profit)}</td></tr>
-      <tr><td>종합소득세</td><td class="amount">${formatCurrencyFull(individual_incomeTax)}</td></tr>
-      <tr><td>지방소득세 (10%)</td><td class="amount">${formatCurrencyFull(individual_localTax)}</td></tr>
-      <tr class="highlight"><td><strong>총 세금</strong></td><td class="amount"><strong>${formatCurrencyFull(individual_total)}</strong></td></tr>
-      <tr><td>세후 순수익</td><td class="amount">${formatCurrencyFull(profit - individual_total)}</td></tr>
-    </tbody>
-  `;
+  // Detail tables
+  $('indTable').innerHTML = `
+    <thead><tr class="border-b border-border"><th class="text-left py-2 text-xs text-muted-foreground">항목</th><th class="text-right py-2 text-xs text-muted-foreground">금액</th></tr></thead>
+    <tbody class="divide-y divide-border">
+      <tr><td class="py-2">순이익</td><td class="text-right py-2 font-mono">${ff(profit)}</td></tr>
+      <tr><td class="py-2">소득공제 합계</td><td class="text-right py-2 font-mono text-muted-foreground">−${ff(totalDeduction)}</td></tr>
+      <tr><td class="py-2">과세표준</td><td class="text-right py-2 font-mono">${ff(indTaxable)}</td></tr>
+      <tr><td class="py-2">종합소득세</td><td class="text-right py-2 font-mono">${ff(indIncome)}</td></tr>
+      <tr><td class="py-2">지방소득세 (10%)</td><td class="text-right py-2 font-mono">${ff(indLocal)}</td></tr>
+      <tr class="bg-amber-50 dark:bg-amber-950/20 font-bold"><td class="py-2">총 세금</td><td class="text-right py-2 font-mono">${ff(indTotal)}</td></tr>
+      <tr><td class="py-2 text-muted-foreground">세후 순수익</td><td class="text-right py-2 font-mono">${ff(profit-indTotal)}</td></tr>
+    </tbody>`;
 
-  // Detail table - Corp
-  document.getElementById('corpDetail').innerHTML = `
-    <thead><tr><th>항목</th><th class="amount">금액</th></tr></thead>
-    <tbody>
-      <tr><td>대표자 연봉</td><td class="amount">${formatCurrencyFull(yearlyCeoSalary)}</td></tr>
-      <tr><td>법인 과세소득 (순이익-대표급여)</td><td class="amount">${formatCurrencyFull(corpProfit)}</td></tr>
-      <tr><td>법인세</td><td class="amount">${formatCurrencyFull(corp_corpTax)}</td></tr>
-      <tr><td>법인 지방소득세</td><td class="amount">${formatCurrencyFull(corp_corpLocalTax)}</td></tr>
-      <tr><td>대표자 소득세</td><td class="amount">${formatCurrencyFull(corp_ceoIncomeTax)}</td></tr>
-      <tr><td>대표자 지방소득세</td><td class="amount">${formatCurrencyFull(corp_ceoLocalTax)}</td></tr>
-      ${dividendAmount > 0 ? `<tr><td>배당금 (${dividendPlan === 'partial' ? '30%' : '전액'})</td><td class="amount">${formatCurrencyFull(dividendAmount)}</td></tr>` : ''}
-      ${dividendAmount > 0 ? `<tr><td>배당소득세</td><td class="amount">${formatCurrencyFull(dividendTax)}</td></tr>` : ''}
-      <tr class="highlight"><td><strong>총 세금</strong></td><td class="amount"><strong>${formatCurrencyFull(corp_total)}</strong></td></tr>
-    </tbody>
-  `;
+  $('corpTable').innerHTML = `
+    <thead><tr class="border-b border-border"><th class="text-left py-2 text-xs text-muted-foreground">항목</th><th class="text-right py-2 text-xs text-muted-foreground">금액</th></tr></thead>
+    <tbody class="divide-y divide-border">
+      <tr><td class="py-2">대표자 연봉</td><td class="text-right py-2 font-mono">${ff(yearlyCeo)}</td></tr>
+      <tr><td class="py-2">법인 과세소득</td><td class="text-right py-2 font-mono">${ff(corpProfit)}</td></tr>
+      <tr><td class="py-2">법인세</td><td class="text-right py-2 font-mono">${ff(corpTax)}</td></tr>
+      <tr><td class="py-2">법인 지방소득세</td><td class="text-right py-2 font-mono">${ff(corpLocal)}</td></tr>
+      <tr><td class="py-2">대표 소득세</td><td class="text-right py-2 font-mono">${ff(ceoIncome)}</td></tr>
+      <tr><td class="py-2">대표 지방소득세</td><td class="text-right py-2 font-mono">${ff(ceoLocal)}</td></tr>
+      ${divAmount>0?`<tr><td class="py-2">배당금 (${Math.round(divRatio*100)}%)</td><td class="text-right py-2 font-mono">${ff(divAmount)}</td></tr>
+      <tr><td class="py-2">배당소득세</td><td class="text-right py-2 font-mono">${ff(divTax)}</td></tr>`:''}
+      <tr class="bg-violet-50 dark:bg-violet-950/20 font-bold"><td class="py-2">총 세금</td><td class="text-right py-2 font-mono">${ff(corpTotal)}</td></tr>
+    </tbody>`;
 
   // Recommendation
-  const recDiv = document.getElementById('recommendationText');
-  let recommendation = '';
-
-  if (savings > 10000000) {
-    recommendation = `
-      <p style="font-size: 15px; margin-bottom: 12px;"><strong style="color: var(--success);">✅ 법인 전환을 적극 권장합니다.</strong></p>
-      <p style="font-size: 14px; color: var(--text-dim);">
-        연간 약 <strong>${formatCurrency(savings)}</strong>의 절세 효과가 예상됩니다.
-        순이익 규모와 현재 세율 구간을 고려할 때, 법인 전환이 확실히 유리합니다.
-        ${profit >= 100000000 ? '순이익 1억원 이상으로 법인세율(9~19%)이 종합소득세율(35~45%)보다 크게 낮습니다.' : ''}
-      </p>
-    `;
-  } else if (savings > 3000000) {
-    recommendation = `
-      <p style="font-size: 15px; margin-bottom: 12px;"><strong style="color: var(--primary);">🔍 법인 전환을 검토해볼 만합니다.</strong></p>
-      <p style="font-size: 14px; color: var(--text-dim);">
-        연간 약 <strong>${formatCurrency(savings)}</strong>의 절세 효과가 예상됩니다.
-        다만 법인 설립/운영 비용(세무기장료 연 100~200만원 등)을 고려하면 실제 이익은 줄어들 수 있습니다.
-        향후 사업 확장 계획이 있다면 전환을 고려하세요.
-      </p>
-    `;
-  } else if (savings > 0) {
-    recommendation = `
-      <p style="font-size: 15px; margin-bottom: 12px;"><strong style="color: var(--warning);">⚖️ 전환 효과가 크지 않습니다.</strong></p>
-      <p style="font-size: 14px; color: var(--text-dim);">
-        절세 효과가 <strong>${formatCurrency(savings)}</strong> 정도로, 법인 운영 비용을 고려하면 큰 이점이 없을 수 있습니다.
-        사업 확장, 투자 유치, 대외 신뢰도 등 세금 외의 요소가 중요하다면 검토하세요.
-      </p>
-    `;
+  let rec = '';
+  if(savings>10000000) {
+    rec = `<p class="font-semibold text-emerald-600 dark:text-emerald-400 mb-2">✅ 법인 전환을 적극 권장합니다.</p>
+    <p class="text-sm text-muted-foreground">연간 약 <strong>${fc(savings)}</strong> 절세 효과. ${profit>=1e8?'순이익 1억원 이상으로 법인세율이 크게 유리합니다.':''}</p>`;
+  } else if(savings>3000000) {
+    rec = `<p class="font-semibold text-violet-600 dark:text-violet-400 mb-2">🔍 법인 전환을 검토해볼 만합니다.</p>
+    <p class="text-sm text-muted-foreground">연간 약 <strong>${fc(savings)}</strong> 절세 가능. 다만 운영비(세무기장료 등)를 고려하면 실제 이익은 줄어듭니다.</p>`;
+  } else if(savings>0) {
+    rec = `<p class="font-semibold text-amber-600 dark:text-amber-400 mb-2">⚖️ 전환 효과가 크지 않습니다.</p>
+    <p class="text-sm text-muted-foreground">절세 약 <strong>${fc(savings)}</strong>으로, 운영비 감안 시 큰 이점이 없을 수 있습니다.</p>`;
   } else {
-    recommendation = `
-      <p style="font-size: 15px; margin-bottom: 12px;"><strong style="color: var(--danger);">❌ 현재는 개인사업자 유지가 유리합니다.</strong></p>
-      <p style="font-size: 14px; color: var(--text-dim);">
-        법인 전환 시 오히려 세금이 <strong>${formatCurrency(Math.abs(savings))}</strong> 증가할 수 있습니다.
-        순이익이 더 증가하거나, 투자유치/사업확장 등의 필요가 생기면 다시 검토하세요.
-      </p>
-    `;
+    rec = `<p class="font-semibold text-red-600 dark:text-red-400 mb-2">❌ 현재는 개인사업자 유지가 유리합니다.</p>
+    <p class="text-sm text-muted-foreground">법인 전환 시 오히려 세금이 <strong>${fc(Math.abs(savings))}</strong> 증가할 수 있습니다.</p>`;
   }
+  rec += `<div class="mt-4 bg-muted rounded-lg p-3 text-sm"><strong>💡 추가 고려:</strong>
+    <ul class="mt-1 pl-5 list-disc text-muted-foreground space-y-1">
+      <li>법인 설립비: 약 80~150만원</li><li>세무기장료: 연 120~360만원</li>
+      <li>대표 4대보험: 약 ${fc(ceo4ins)}/년</li><li>법인 자금 인출 시 배당세·급여세 발생</li>
+    </ul></div>`;
+  $('recText').innerHTML = rec;
 
-  recommendation += `
-    <div style="margin-top: 16px; padding: 12px; background: var(--bg); border-radius: 8px; font-size: 13px;">
-      <strong>💡 추가 고려사항:</strong>
-      <ul style="margin-top: 8px; padding-left: 20px; color: var(--text-dim);">
-        <li>법인 설립비용: 약 50~100만원 (등록면허세, 공과금 등)</li>
-        <li>세무기장료: 월 10~30만원 (연 120~360만원)</li>
-        <li>대표자 4대보험 추가 부담: 약 ${formatCurrency(corp_4insurance)}/년</li>
-        <li>법인 자금 인출 시 배당소득세 또는 급여소득세 발생</li>
-      </ul>
-    </div>
-  `;
+  renderCharts(window._lastSim);
+  render5Year(window._lastSim);
+  renderDividendTab(window._lastSim);
 
-  recDiv.innerHTML = recommendation;
+  // Scroll to results
+  $('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ===== Charts =====
+function renderCharts(d) {
+  const isDark = document.documentElement.classList.contains('dark');
+  const txtColor = isDark ? '#a1a1aa' : '#71717a';
+  Chart.defaults.color = txtColor;
+  Chart.defaults.borderColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+
+  // Bar
+  if(barChartInst) barChartInst.destroy();
+  barChartInst = new Chart($('barChart'), {
+    type:'bar',
+    data:{
+      labels:['개인사업자','법인'],
+      datasets:[
+        {label:'소득세/법인세', data:[d.indIncome+d.indLocal, d.corpTax+d.corpLocal], backgroundColor: isDark?'rgba(249,115,22,0.7)':'rgba(249,115,22,0.8)', borderRadius:6},
+        {label:'대표 소득세', data:[0, d.ceoIncome+d.ceoLocal], backgroundColor: isDark?'rgba(139,92,246,0.7)':'rgba(139,92,246,0.8)', borderRadius:6},
+        {label:'배당소득세', data:[0, d.divTax], backgroundColor: isDark?'rgba(236,72,153,0.7)':'rgba(236,72,153,0.8)', borderRadius:6},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}, scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fc(v)}}}}
+  });
+
+  // Donut
+  if(donutChartInst) donutChartInst.destroy();
+  const corpParts = [d.corpTax+d.corpLocal, d.ceoIncome+d.ceoLocal, d.divTax].filter(v=>v>0);
+  const corpLabels = ['법인세+지방세','대표 소득세+지방세','배당소득세'].filter((_,i)=>[d.corpTax+d.corpLocal, d.ceoIncome+d.ceoLocal, d.divTax][i]>0);
+  donutChartInst = new Chart($('donutChart'), {
+    type:'doughnut',
+    data:{
+      labels:corpLabels,
+      datasets:[{data:corpParts, backgroundColor:['rgba(139,92,246,0.8)','rgba(59,130,246,0.8)','rgba(236,72,153,0.8)'], borderWidth:0}]
+    },
+    options:{responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}
+  });
+}
+
+// ===== 5-Year Tab =====
+function render5Year(d) {
+  $('fiveYearNote').classList.add('hidden');
+  $('fiveYearContent').classList.remove('hidden');
+
+  // 법인 설립비 상세
+  const setupItems = [
+    ['등록면허세 (자본금×0.4%)', Math.max(135000, 0)], // 최소 112,500 + 교육세
+    ['교육세 (등록면허세×20%)', 0],
+    ['법무사 수수료', 500000],
+    ['인감제작비', 30000],
+    ['등기수수료·공과금', 50000],
+    ['정관 인증 (공증비)', 100000],
+    ['기타 (통장 개설 등)', 20000],
+  ];
+  // 등록면허세 계산 (자본금 기반, 최소 112,500원)
+  const capital = 50000000; // 기본 5천만원 가정
+  setupItems[0][1] = Math.max(112500, Math.round(capital*0.004));
+  setupItems[1][1] = Math.round(setupItems[0][1]*0.2);
+  const setupTotal = setupItems.reduce((s,x)=>s+x[1],0);
+
+  $('setupCostTable').innerHTML = `
+    <thead><tr class="border-b border-border"><th class="text-left py-2 text-xs text-muted-foreground">항목</th><th class="text-right py-2 text-xs text-muted-foreground">금액</th></tr></thead>
+    <tbody class="divide-y divide-border">
+      ${setupItems.map(x=>`<tr><td class="py-2">${x[0]}</td><td class="text-right py-2 font-mono">${ff(x[1])}</td></tr>`).join('')}
+      <tr class="font-bold bg-muted"><td class="py-2">합계 (1회성)</td><td class="text-right py-2 font-mono">${ff(setupTotal)}</td></tr>
+    </tbody>`;
+
+  const annualCost = 2400000; // 세무기장료 월 20만
+  const annualItems = [['세무기장료 (월 20만원)', 2400000],['법인세 신고 수수료', 500000],['4대보험 대표 추가부담 (추정)', Math.round(d.ceo4ins/2)]];
+  const annualTotal = annualItems.reduce((s,x)=>s+x[1],0);
+
+  $('annualCostTable').innerHTML = `
+    <thead><tr class="border-b border-border"><th class="text-left py-2 text-xs text-muted-foreground">항목</th><th class="text-right py-2 text-xs text-muted-foreground">연간 금액</th></tr></thead>
+    <tbody class="divide-y divide-border">
+      ${annualItems.map(x=>`<tr><td class="py-2">${x[0]}</td><td class="text-right py-2 font-mono">${ff(x[1])}</td></tr>`).join('')}
+      <tr class="font-bold bg-muted"><td class="py-2">합계 (연간)</td><td class="text-right py-2 font-mono">${ff(annualTotal)}</td></tr>
+    </tbody>`;
+
+  // 5년 누적
+  const years = [1,2,3,4,5];
+  const indCum = [], corpCum = [], netSav = [];
+  let indAcc=0, corpAcc=0;
+  const rows = years.map(y => {
+    indAcc += d.indTotal;
+    const corpYearCost = d.corpTotal + annualTotal + (y===1?setupTotal:0);
+    corpAcc += corpYearCost;
+    indCum.push(indAcc);
+    corpCum.push(corpAcc);
+    netSav.push(indAcc-corpAcc);
+    return `<tr class="${indAcc-corpAcc>0?'':'text-red-600 dark:text-red-400'}"><td class="py-2">${y}년차</td><td class="text-right py-2 font-mono">${ff(indAcc)}</td><td class="text-right py-2 font-mono">${ff(corpAcc)}</td><td class="text-right py-2 font-mono font-bold">${indAcc-corpAcc>0?'+':''}${ff(indAcc-corpAcc)}</td></tr>`;
+  });
+
+  $('fiveYearTable').innerHTML = `
+    <thead><tr class="border-b border-border"><th class="text-left py-2 text-xs text-muted-foreground">기간</th><th class="text-right py-2 text-xs text-orange-600">개인 누적세금</th><th class="text-right py-2 text-xs text-violet-600">법인 누적비용</th><th class="text-right py-2 text-xs text-muted-foreground">누적 절세액</th></tr></thead>
+    <tbody class="divide-y divide-border">${rows.join('')}</tbody>`;
+
+  // Chart
+  const isDark = document.documentElement.classList.contains('dark');
+  if(fiveYearChartInst) fiveYearChartInst.destroy();
+  fiveYearChartInst = new Chart($('fiveYearChart'), {
+    type:'line',
+    data:{
+      labels:['1년','2년','3년','4년','5년'],
+      datasets:[
+        {label:'개인 누적세금', data:indCum, borderColor:'rgb(249,115,22)', backgroundColor:'rgba(249,115,22,0.1)', fill:true, tension:0.3},
+        {label:'법인 누적비용', data:corpCum, borderColor:'rgb(139,92,246)', backgroundColor:'rgba(139,92,246,0.1)', fill:true, tension:0.3},
+        {label:'누적 절세액', data:netSav, borderColor:'rgb(16,185,129)', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:0.3, borderDash:[5,5]}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}, scales:{y:{ticks:{callback:v=>fc(v)}}}}
+  });
+}
+
+// ===== Dividend Tab =====
+function renderDividendTab(d) {
+  $('divNote').classList.add('hidden');
+  $('divContent').classList.remove('hidden');
+
+  const ratios = [0,10,20,30,40,50,60,70,80,90,100];
+  const results = ratios.map(r => {
+    const ratio = r/100;
+    const div = Math.max(0, d.afterCorpTax*ratio);
+    const divT = calcDividendTax(div, d.yearlyCeo, d.year);
+    const total = d.corpTax+d.corpLocal+d.ceoIncome+d.ceoLocal+divT;
+    return {ratio:r, divAmount:div, divTax:divT, total, savings:d.indTotal-total};
+  });
+
+  const optimal = results.reduce((best,x) => x.total<best.total?x:best, results[0]);
+
+  $('divOnly0').textContent = fc(results[0].total);
+  $('divOptimal').textContent = `${optimal.ratio}% → ${fc(optimal.total)}`;
+  $('divOnly100').textContent = fc(results[results.length-1].total);
+
+  $('divTable').innerHTML = `
+    <thead><tr class="border-b border-border"><th class="text-left py-2 text-xs text-muted-foreground">배당비율</th><th class="text-right py-2 text-xs text-muted-foreground">배당금</th><th class="text-right py-2 text-xs text-muted-foreground">배당세</th><th class="text-right py-2 text-xs text-muted-foreground">총세금</th><th class="text-right py-2 text-xs text-muted-foreground">절세액</th></tr></thead>
+    <tbody class="divide-y divide-border">
+      ${results.map(r=>`<tr class="${r.ratio===optimal.ratio?'bg-violet-50 dark:bg-violet-950/20 font-bold':''}"><td class="py-2">${r.ratio}%</td><td class="text-right py-2 font-mono">${fc(r.divAmount)}</td><td class="text-right py-2 font-mono">${fc(r.divTax)}</td><td class="text-right py-2 font-mono">${fc(r.total)}</td><td class="text-right py-2 font-mono ${r.savings>0?'text-emerald-600':'text-red-600'}">${r.savings>0?'+':''}${fc(r.savings)}</td></tr>`).join('')}
+    </tbody>`;
+
+  const isDark = document.documentElement.classList.contains('dark');
+  if(divChartInst) divChartInst.destroy();
+  divChartInst = new Chart($('divChart'), {
+    type:'bar',
+    data:{
+      labels:ratios.map(r=>r+'%'),
+      datasets:[
+        {label:'법인세+대표소득세', data:results.map(r=>r.total-r.divTax), backgroundColor:'rgba(139,92,246,0.7)', borderRadius:4},
+        {label:'배당소득세', data:results.map(r=>r.divTax), backgroundColor:'rgba(236,72,153,0.7)', borderRadius:4},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}, scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>fc(v)}}}}
+  });
+}
+
+// ===== Checklist =====
+const checklistData = [
+  {title:'📝 사전 준비', items:[
+    ['사업타당성 검토','법인전환의 필요성과 적정 시기 검토'],
+    ['세무사/회계사 상담','절세효과 및 법인 형태(주식회사/유한회사) 결정'],
+    ['자본금 결정','최소 자본금 제한 없음, 통상 1,000만원~1억원'],
+    ['상호 결정 및 중복 확인','인터넷등기소에서 상호 중복 여부 확인'],
+  ]},
+  {title:'📄 법인 설립', items:[
+    ['정관 작성','회사 조직·운영에 관한 기본 규칙'],
+    ['주주명부 작성','출자자 정보, 주식 수, 지분율 기재'],
+    ['자본금 납입','은행 계좌 개설 후 자본금 납입, 잔고증명서 발급'],
+    ['법인 설립등기','등기소 방문 또는 인터넷등기소 신청'],
+    ['법인 인감 등록','법인 인감 제작 및 등록'],
+  ]},
+  {title:'🏛️ 신고 및 등록', items:[
+    ['사업자등록 신청','관할 세무서 또는 홈택스에서 법인 사업자등록'],
+    ['개인사업자 폐업 신고','기존 개인사업자 폐업 처리 (부가세 확정신고 포함)'],
+    ['4대보험 사업장 가입','법인 명의로 4대보험 사업장 신규 가입'],
+    ['법인 통장 개설','법인 명의 사업용 계좌 개설'],
+    ['계약서/거래처 명의 변경','임대차계약, 거래처 계약 등 법인 명의로 변경'],
+  ]},
+  {title:'💼 자산 이전 (해당 시)', items:[
+    ['전환 방식 결정','현물출자 vs 사업양수도 vs 신규설립 (세무사 상담 필수)'],
+    ['자산/부채 실사','이전할 자산·부채 목록 정리, 감정평가'],
+    ['양도소득세/취득세 검토','부동산 등 자산 이전 시 세금 확인'],
+    ['명의 변경 완료','차량, 부동산, 지식재산권 등 법인 명의 이전'],
+  ]},
+];
+
+function buildChecklist() {
+  const area = $('checklistArea');
+  let html = '';
+  checklistData.forEach(section => {
+    html += `<h3 class="text-sm font-bold text-violet-600 dark:text-violet-400 mb-3 mt-5 first:mt-0">${section.title}</h3>`;
+    section.items.forEach(([title,desc]) => {
+      html += `<div class="flex items-start gap-3 py-3 border-b border-border">
+        <button onclick="toggleCk(this)" class="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full border-2 border-zinc-300 dark:border-zinc-600 flex items-center justify-center text-xs transition hover:border-violet-500" data-checked="0"></button>
+        <div><div class="text-sm font-semibold">${title}</div><div class="text-xs text-muted-foreground">${desc}</div></div>
+      </div>`;
+    });
+  });
+  area.innerHTML = html;
+}
+
+function toggleCk(btn) {
+  const checked = btn.dataset.checked === '1';
+  btn.dataset.checked = checked ? '0' : '1';
+  btn.innerHTML = checked ? '' : '✓';
+  btn.classList.toggle('bg-emerald-500', !checked);
+  btn.classList.toggle('border-emerald-500', !checked);
+  btn.classList.toggle('text-white', !checked);
+  updateProgress();
+}
+
+function updateProgress() {
+  const all = document.querySelectorAll('#checklistArea button[data-checked]');
+  const done = document.querySelectorAll('#checklistArea button[data-checked="1"]');
+  const pct = all.length ? (done.length/all.length*100) : 0;
+  $('progressBar').style.width = pct+'%';
+  $('checkProgress').textContent = `${done.length}/${all.length} 완료`;
 }
 </script>
 
