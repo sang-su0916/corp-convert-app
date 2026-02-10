@@ -142,7 +142,7 @@
 <div class="container">
   <!-- Notice -->
   <div class="notice no-print">
-    ⚠️ <strong>주의:</strong> 본 시뮬레이터는 참고용이며, 정확한 세금 계산은 세무사와 상담하시기 바랍니다. 세율은 2024년 기준이며, 지방소득세가 포함되어 있습니다.
+    ⚠️ <strong>주의:</strong> 본 시뮬레이터는 참고용이며, 정확한 세금 계산은 세무사와 상담하시기 바랍니다. 세율은 2026년 기준이며, 지방소득세가 포함되어 있습니다. 출처: <a href="https://www.nts.go.kr" target="_blank">국세청</a>
   </div>
 
   <!-- Tabs -->
@@ -431,7 +431,7 @@
         </div>
         <div class="accordion-body">
           <ul style="padding-left: 20px; font-size: 14px; color: var(--text-dim);">
-            <li style="margin-bottom: 8px;"><strong>세금 절감:</strong> 소득이 높을수록 법인세율(9~24%)이 종합소득세율(6~45%)보다 유리</li>
+            <li style="margin-bottom: 8px;"><strong>세금 절감:</strong> 소득이 높을수록 법인세율(10~25%)이 종합소득세율(6~45%)보다 유리</li>
             <li style="margin-bottom: 8px;"><strong>대외 신뢰도:</strong> 법인은 개인사업자보다 거래처, 금융기관에서 신뢰도가 높음</li>
             <li style="margin-bottom: 8px;"><strong>유한책임:</strong> 주주는 출자액 한도 내에서만 책임 (개인재산 보호)</li>
             <li style="margin-bottom: 8px;"><strong>자금조달:</strong> 투자유치, 대출 등에서 유리</li>
@@ -475,7 +475,7 @@
 
       <div class="accordion">
         <div class="accordion-header" onclick="toggleAccordion(this)">
-          세율 비교 (2024년 기준)
+          세율 비교 (2026년 기준)
           <span class="accordion-icon">▼</span>
         </div>
         <div class="accordion-body">
@@ -491,12 +491,12 @@
             <tr><td>10억원 초과</td><td class="amount">45%</td></tr>
           </table>
 
-          <h5 style="margin-bottom: 8px;">📌 법인세율</h5>
+          <h5 style="margin-bottom: 8px;">📌 법인세율 (2026년~)</h5>
           <table class="detail-table">
-            <tr><td>2억원 이하</td><td class="amount">9%</td></tr>
-            <tr><td>2억원 ~ 200억원</td><td class="amount">19%</td></tr>
-            <tr><td>200억원 ~ 3,000억원</td><td class="amount">21%</td></tr>
-            <tr><td>3,000억원 초과</td><td class="amount">24%</td></tr>
+            <tr><td>2억원 이하</td><td class="amount">10%</td></tr>
+            <tr><td>2억원 ~ 200억원</td><td class="amount">20%</td></tr>
+            <tr><td>200억원 ~ 3,000억원</td><td class="amount">22%</td></tr>
+            <tr><td>3,000억원 초과</td><td class="amount">25%</td></tr>
           </table>
           <p style="font-size: 12px; color: var(--text-dim); margin-top: 8px;">* 지방소득세 10% 별도</p>
         </div>
@@ -578,10 +578,10 @@ function calculateIncomeTax(income) {
 // 법인세 계산
 function calculateCorpTax(income) {
   const brackets = [
-    { limit: 200000000, rate: 0.09 },
-    { limit: 20000000000, rate: 0.19 },
-    { limit: 300000000000, rate: 0.21 },
-    { limit: Infinity, rate: 0.24 }
+    { limit: 200000000, rate: 0.10 },
+    { limit: 20000000000, rate: 0.20 },
+    { limit: 300000000000, rate: 0.22 },
+    { limit: Infinity, rate: 0.25 }
   ];
 
   let tax = 0;
